@@ -1,24 +1,17 @@
-import { Answer } from "../entities/answer"
-import { AnswersRepository } from "../repositories/answers-repository"
+import { Entity } from "../../core/entities/entity"
+import { UniqueEntityID } from "../../core/entities/unique-entity-id"
 
-interface AnswerQuestionUseCaseRequest {
-  instructorId: string
-  questionId: string
-  content: string
+interface StudentProps {
+  name: string
 }
 
-export class AnswerQuestionUseCase {
-  constructor(private answersRepository: AnswersRepository) {}
+export class Student extends Entity<StudentProps> {
+  static create(
+    props: StudentProps,
+    id?: UniqueEntityID,
+  ) {
+    const student = new Student(props, id)
 
-  async execute({ instructorId, questionId, content }: AnswerQuestionUseCaseRequest) {
-    const answer = new Answer({
-      content,
-      authorId: instructorId,
-      questionId,
-    })
-
-    await this.answersRepository.create(answer)
-
-    return answer
+    return student
   }
 }
