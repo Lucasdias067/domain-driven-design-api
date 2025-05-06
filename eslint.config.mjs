@@ -1,26 +1,26 @@
 import js from '@eslint/js'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
-import { defineConfig } from 'eslint/config'
 import rocketseatEslintConfig from '@rocketseat/eslint-config/node.mjs'
 
-export default defineConfig([
+export default [
+  ...tseslint.configs.recommended,
+  ...rocketseatEslintConfig,
   {
     files: ['**/*.{js,mjs,cjs,ts,spec.ts}'],
-    plugins: { js },
-    extends: ['js/recommended'],
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+        ...globals.node,
+      },
+    },
     rules: {
       'no-useless-constructor': 'off',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'error',
-      '@stylistic/max-len:': 'error',
+      '@stylistic/max-len': 0,
+      '@typescript-eslint/no-empty-object-type': 0,
     },
-    languageOptions: { globals: globals.vitest },
   },
-  {
-    files: ['**/*.{js,mjs,cjs,ts,spec.ts}'],
-    languageOptions: { globals: globals.node },
-  },
-  tseslint.configs.recommended,
-  ...rocketseatEslintConfig,
-])
+]
