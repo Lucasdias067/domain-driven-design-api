@@ -1,48 +1,39 @@
+import { UniqueEntityID } from '@/core/entities/unique-entity-id'
+import { Answer } from '../../enterprise/entities/answer'
 import { AnswersRepository } from '../repositories/answers-repository'
-import { Question } from '@/domain/forum/enterprise/entities/question'
-import { QuestionsRepository } from '@/domain/forum/application/repositories/questions-repository'
+import { Either, right } from '@/core/either'
 
-interface ChooseQuestionBestAnswerUseCaseRequest {
-  authorId: string
-  answerId: string
+interface AnswerQuestionUseCaseRequest {
+  instructorId: string
+  questionId: string
+  content: string
 }
 
-interface ChooseQuestionBestAnswerUseCaseResponse {
-  question: Question
-}
+type AnswerQuestionUseCaseResponse = Either<
+  null,
+  {
+    answer: Answer
+  }
+>
 
-export class ChooseQuestionBestAnswerUseCase {
-  constructor(
-    private questionsRepository: QuestionsRepository,
-    private answersRepository: AnswersRepository,
-  ) {}
+export class AnswerQuestionUseCase {
+  constructor(private answersRepository: AnswersRepository) {}
 
   async execute({
-    answerId,
-    authorId,
-  }: ChooseQuestionBestAnswerUseCaseRequest): Promise<ChooseQuestionBestAnswerUseCaseResponse> {
-    const answer = await this.answersRepository.findById(answerId)
+    instructorId,
+    questionId,
+    content,
+  }: AnswerQuestionUseCaseRequest): Promise<AnswerQuestionUseCaseResponse> {
+    const answer = Answer.create({
+      content,
+      authorId: new UniqueEntityID(instructorId),
+      questionId: new UniqueEntityID(questionId),
+    })
 
-    if (!answer) {
-      throw new Error('Answer not found.')
-    }
+    await this.answersRepository.create(answer)
 
-    const question = await this.questionsRepository.findById(
-      answer.questionId.toString(),
-    )
-
-    if (!question) {
-      throw new Error('Question not found.')
-    }
-
-    if (authorId !== question.authorId.toString()) {
-      throw new Error('Not allowed.')
-    }
-
-    question.bestAnswerId = answer.id
-
-    await this.questionsRepository.save(question)
-
-    return { question }
+    return right({
+      answer,
+    })
   }
 }
