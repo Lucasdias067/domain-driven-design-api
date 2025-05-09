@@ -1,39 +1,56 @@
-import { UniqueEntityID } from '@/core/entities/unique-entity-id'
-import { Answer } from '../../enterprise/entities/answer'
 import { AnswersRepository } from '../repositories/answers-repository'
-import { Either, right } from '@/core/either'
+import { Question } from '@/domain/forum/enterprise/entities/question'
+import { QuestionsRepository } from '@/domain/forum/application/repositories/questions-repository'
+import { Either, left, right } from '@/core/either'
+import { ResourceNotFoundError } from '@/domain/forum/application/use-cases/errors/resource-not-found-error'
+import { NotAllowedError } from '@/domain/forum/application/use-cases/errors/not-allowed-error'
 
-interface AnswerQuestionUseCaseRequest {
-  instructorId: string
-  questionId: string
-  content: string
+interface ChooseQuestionBestAnswerUseCaseRequest {
+  authorId: string
+  answerId: string
 }
 
-type AnswerQuestionUseCaseResponse = Either<
-  null,
+type ChooseQuestionBestAnswerUseCaseResponse = Either<
+  ResourceNotFoundError | NotAllowedError,
   {
-    answer: Answer
+    question: Question
   }
 >
 
-export class AnswerQuestionUseCase {
-  constructor(private answersRepository: AnswersRepository) {}
+export class ChooseQuestionBestAnswerUseCase {
+  constructor(
+    private questionsRepository: QuestionsRepository,
+    private answersRepository: AnswersRepository,
+  ) {}
 
   async execute({
-    instructorId,
-    questionId,
-    content,
-  }: AnswerQuestionUseCaseRequest): Promise<AnswerQuestionUseCaseResponse> {
-    const answer = Answer.create({
-      content,
-      authorId: new UniqueEntityID(instructorId),
-      questionId: new UniqueEntityID(questionId),
-    })
+    answerId,
+    authorId,
+  }: ChooseQuestionBestAnswerUseCaseRequest): Promise<ChooseQuestionBestAnswerUseCaseResponse> {
+    const answer = await this.answersRepository.findById(answerId)
 
-    await this.answersRepository.create(answer)
+    if (!answer) {
+      return left(new ResourceNotFoundError())
+    }
+
+    const question = await this.questionsRepository.findById(
+      answer.questionId.toString(),
+    )
+
+    if (!question) {
+      return left(new ResourceNotFoundError())
+    }
+
+    if (authorId !== question.authorId.toString()) {
+      return left(new NotAllowedError())
+    }
+
+    question.bestAnswerId = answer.id
+
+    await this.questionsRepository.save(question)
 
     return right({
-      answer,
+      question,
     })
   }
 }
