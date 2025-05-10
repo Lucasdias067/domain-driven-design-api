@@ -21,4 +21,3 @@ export class Attachment extends Entity<AttachmentProps> {
     return attachment
   }
 }
- 
