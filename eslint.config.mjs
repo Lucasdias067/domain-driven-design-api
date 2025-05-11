@@ -18,6 +18,8 @@ export default [
     rules: {
       'no-useless-constructor': 'off',
       'no-unused-vars': 'off',
+      'no-new': 'off',
+      'no-undef': 'off',
       '@typescript-eslint/no-unused-vars': 'error',
       '@stylistic/max-len': 0,
       '@typescript-eslint/no-empty-object-type': 0,
